@@ -1,0 +1,6 @@
+/Users/luofan/code/tech-challenge/src/main/java/com/oracle/OracleTechChallengeApplication.java
+/Users/luofan/code/tech-challenge/src/main/java/com/oracle/OracleTechChallengeConfiguration.java
+/Users/luofan/code/tech-challenge/src/main/java/com/oracle/api/CoinResource.java
+/Users/luofan/code/tech-challenge/src/main/java/com/oracle/dto/request/CoinRequest.java
+/Users/luofan/code/tech-challenge/src/main/java/com/oracle/dto/response/CoinResponse.java
+/Users/luofan/code/tech-challenge/src/main/java/com/oracle/service/CoinService.java

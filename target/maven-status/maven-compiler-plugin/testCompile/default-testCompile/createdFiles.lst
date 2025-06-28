@@ -1,0 +1,7 @@
+com/oracle/service/CoinServiceTest$ImpossibleCaseTests.class
+com/oracle/service/CoinServiceTest$ValidationTests.class
+com/oracle/service/CoinServiceTest$NormalChangeCalculationTests.class
+com/oracle/service/CoinServiceTest$PerformanceTests.class
+com/oracle/service/CoinServiceTest.class
+com/oracle/service/CoinServiceTest$BoundaryTests.class
+com/oracle/service/CoinServiceTest$OptimalSolutionTests.class
