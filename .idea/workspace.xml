@@ -17,6 +17,9 @@
       </list>
     </option>
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
@@ -34,6 +37,7 @@
     "JUnit.CoinServiceTest$PerformanceTests.executor": "Run",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "main",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "/Users/luofan/code/tech-challenge",
     "node.js.detected.package.eslint": "true",
@@ -101,7 +105,7 @@
       <updated>1751036196255</updated>
       <workItem from="1751036197346" duration="1465000" />
       <workItem from="1751073708829" duration="1079000" />
-      <workItem from="1751078127445" duration="2917000" />
+      <workItem from="1751078127445" duration="3584000" />
     </task>
     <servers />
   </component>
