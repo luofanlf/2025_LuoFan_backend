@@ -67,7 +67,7 @@ class CoinServiceTest {
         }
 
         @Test
-        @DisplayName("basic calculation2 - 11元")
+        @DisplayName("basic calculation2 - 11")
         void shouldCalculateSimpleChange() {
             // Given
             BigDecimal totalAmount = new BigDecimal("11.00");
@@ -121,7 +121,7 @@ class CoinServiceTest {
     class BoundaryTests {
 
         @Test
-        @DisplayName("minimum amount - 0.01元")
+        @DisplayName("minimum amount - 0.01")
         void shouldHandleMinimumAmount() {
             // Given
             BigDecimal totalAmount = new BigDecimal("0.01");

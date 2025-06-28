@@ -100,7 +100,7 @@ This project uses GitHub Actions for automated testing and deployment.
 ### Deployment Environment
 - **Platform**: AWS EC2 (Ubuntu)
 - **Containerization**: Docker
-- **Ports**: 80 (API), 8081 (Health Check)
+- **Ports**: 8080 (API)
 - **URL**: `http://47.129.211.124`
 
 ### Trigger Conditions
@@ -122,7 +122,6 @@ mvn test
 ### Test Coverage
 - Normal change calculation scenarios
 - Edge cases and boundary conditions
-- No solution scenarios
 - Algorithm optimality verification
 - Performance testing
 
