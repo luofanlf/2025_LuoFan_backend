@@ -1,0 +1,6 @@
+com/oracle/OracleTechChallengeConfiguration.class
+com/oracle/OracleTechChallengeApplication.class
+com/oracle/service/CoinService.class
+com/oracle/api/CoinResource.class
+com/oracle/dto/response/CoinResponse.class
+com/oracle/dto/request/CoinRequest.class
