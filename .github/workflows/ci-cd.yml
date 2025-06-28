@@ -10,6 +10,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     name: Run Tests
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
     
     steps:
     - name: Checkout code
@@ -31,14 +35,8 @@ jobs:
     - name: Run tests
       run: mvn clean test
       
-    - name: Generate test report
-      uses: dorny/test-reporter@v1
-      if: success() || failure()
-      with:
-        name: Maven Tests
-        path: target/surefire-reports/*.xml
-        reporter: java-junit
-        fail-on-error: true
+    # 测试报告生成已移除以避免权限问题
+    # 测试失败时workflow会自动停止
 
   deploy:
     runs-on: ubuntu-latest
