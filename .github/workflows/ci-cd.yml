@@ -48,67 +48,158 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Deploy to EC2
+    - name: Debug Secrets
+      run: |
+        echo "🔍 调试Secrets设置:"
+        echo "EC2_HOST存在: ${{ secrets.EC2_HOST != '' }}"
+        echo "EC2_USER存在: ${{ secrets.EC2_USER != '' }}"
+        echo "EC2_SSH_KEY存在: ${{ secrets.EC2_SSH_KEY != '' }}"
+        echo "EC2_HOST值: ${{ secrets.EC2_HOST }}"
+        echo "EC2_USER值: ${{ secrets.EC2_USER }}"
+        echo "SSH密钥长度: $(echo '${{ secrets.EC2_SSH_KEY }}' | wc -c)"
+        echo "SSH密钥开头: $(echo '${{ secrets.EC2_SSH_KEY }}' | head -c 30)..."
+        echo "SSH密钥结尾: $(echo '${{ secrets.EC2_SSH_KEY }}' | tail -c 30)"
+        
+    - name: Test SSH Key Format
+      run: |
+        echo "🔑 测试SSH密钥格式:"
+        echo '${{ secrets.EC2_SSH_KEY }}' > /tmp/test_key
+        chmod 600 /tmp/test_key
+        if ssh-keygen -l -f /tmp/test_key 2>/dev/null; then
+          echo "✅ SSH密钥格式正确"
+        else
+          echo "❌ SSH密钥格式错误"
+          echo "尝试验证密钥内容..."
+          head -1 /tmp/test_key
+          tail -1 /tmp/test_key
+        fi
+        rm -f /tmp/test_key
+        
+    - name: Test Network Connectivity
+      run: |
+        echo "🌐 测试网络连通性:"
+        if ping -c 3 ${{ secrets.EC2_HOST }}; then
+          echo "✅ EC2实例网络可达"
+        else
+          echo "❌ EC2实例网络不可达"
+        fi
+        
+        echo "🔌 测试SSH端口:"
+        if timeout 10 nc -z ${{ secrets.EC2_HOST }} 22; then
+          echo "✅ SSH端口22开放"
+        else
+          echo "❌ SSH端口22不可达"
+        fi
+        
+    - name: Deploy to EC2 with Debug
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         port: 22
+        debug: true
+        timeout: 30s
+        command_timeout: 10m
         script: |
+          echo "🚀 开始部署调试..."
+          echo "当前用户: $(whoami)"
+          echo "当前目录: $(pwd)"
+          echo "系统信息: $(uname -a)"
+          echo "可用磁盘空间: $(df -h /)"
+          echo "内存使用: $(free -h)"
+          
           # 设置变量
           REPO_URL="https://github.com/${{ github.repository }}.git"
           PROJECT_DIR="/home/ubuntu/tech-challenge"
           CONTAINER_NAME="tech-challenge-backend"
           IMAGE_NAME="tech-challenge-backend"
           
+          echo "📋 部署变量:"
+          echo "REPO_URL=$REPO_URL"
+          echo "PROJECT_DIR=$PROJECT_DIR"
+          echo "CONTAINER_NAME=$CONTAINER_NAME"
+          echo "IMAGE_NAME=$IMAGE_NAME"
+          
           # 更新系统并安装必要工具
+          echo "📦 更新系统包..."
           sudo apt update -y
           
           # 安装Git（如果没有安装）
+          echo "📦 检查Git安装状态..."
           if ! command -v git &> /dev/null; then
+            echo "安装Git..."
             sudo apt install -y git
+          else
+            echo "✅ Git已安装: $(git --version)"
           fi
           
           # 安装Docker（如果没有安装）
+          echo "🐳 检查Docker安装状态..."
           if ! command -v docker &> /dev/null; then
+            echo "安装Docker..."
             sudo apt install -y docker.io
             sudo systemctl start docker
             sudo systemctl enable docker
             sudo usermod -a -G docker ubuntu
+            echo "✅ Docker安装完成"
+          else
+            echo "✅ Docker已安装: $(docker --version)"
           fi
           
           # 确保Docker服务运行
+          echo "🔄 启动Docker服务..."
           sudo systemctl start docker
+          echo "Docker服务状态: $(sudo systemctl is-active docker)"
+          echo "Docker版本: $(docker --version)"
+          echo "当前Docker容器: $(docker ps -a || echo '无容器')"
           
           # 停止并删除现有容器（如果存在）
+          echo "🛑 检查并停止现有容器..."
           if docker ps -q -f name=$CONTAINER_NAME; then
-            echo "Stopping existing container..."
+            echo "发现运行中的容器，正在停止..."
             docker stop $CONTAINER_NAME
+            echo "✅ 容器已停止"
+          else
+            echo "没有运行中的容器"
           fi
           
           if docker ps -aq -f name=$CONTAINER_NAME; then
-            echo "Removing existing container..."
+            echo "删除现有容器..."
             docker rm $CONTAINER_NAME
+            echo "✅ 容器已删除"
+          else
+            echo "没有需要删除的容器"
           fi
           
           # 删除旧镜像（如果存在）
+          echo "🗑️ 检查并删除旧镜像..."
           if docker images -q $IMAGE_NAME; then
-            echo "Removing old image..."
+            echo "删除旧镜像..."
             docker rmi $IMAGE_NAME
+            echo "✅ 旧镜像已删除"
+          else
+            echo "没有需要删除的旧镜像"
           fi
           
           # 清理项目目录并重新克隆
+          echo "📁 准备项目目录..."
           rm -rf $PROJECT_DIR
+          echo "克隆项目代码..."
           git clone $REPO_URL $PROJECT_DIR
           cd $PROJECT_DIR
+          echo "✅ 项目代码已克隆到: $(pwd)"
+          echo "项目文件: $(ls -la)"
           
           # 构建Docker镜像
-          echo "Building Docker image..."
+          echo "🔨 构建Docker镜像..."
+          echo "Dockerfile内容预览:"
+          head -10 Dockerfile
           docker build -t $IMAGE_NAME .
+          echo "✅ Docker镜像构建完成"
           
           # 运行新容器
-          echo "Starting new container..."
+          echo "🚀 启动新容器..."
           docker run -d \
             --name $CONTAINER_NAME \
             --restart unless-stopped \
@@ -116,41 +207,65 @@ jobs:
             -p 8081:8081 \
             $IMAGE_NAME
           
+          echo "✅ 容器已启动，容器ID: $(docker ps -q -f name=$CONTAINER_NAME)"
+          echo "容器详细信息:"
+          docker ps --filter name=$CONTAINER_NAME --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+          
           # 等待服务启动
-          echo "Waiting for service to start..."
+          echo "⏳ 等待服务启动（30秒）..."
           sleep 30
           
+          echo "📋 检查容器状态和日志..."
+          echo "容器状态: $(docker inspect $CONTAINER_NAME --format='{{.State.Status}}')"
+          echo "容器日志（最近20行）:"
+          docker logs --tail 20 $CONTAINER_NAME
+          
           # 健康检查
-          echo "Performing health check..."
+          echo "🏥 执行健康检查..."
+          echo "测试健康检查端点: http://localhost:8081/healthcheck"
           if curl -f http://localhost:8081/healthcheck > /dev/null 2>&1; then
-            echo "✅ Health check passed - Service is running properly!"
+            echo "✅ 健康检查通过 - 服务正常运行!"
           else
-            echo "⚠️ Health check failed - Service might not be ready yet"
+            echo "⚠️ 健康检查失败，查看详细响应:"
+            curl -v http://localhost:8081/healthcheck || echo "健康检查端点无响应"
           fi
           
           # 测试API
-          echo "Testing API..."
+          echo "🧪 测试API端点..."
+          echo "测试API端点: http://localhost:80/api/coins"
           API_RESPONSE=$(curl -s -X POST http://localhost:80/api/coins \
             -H "Content-Type: application/json" \
             -d '{"totalAmount": 11.00, "denominations": [500, 200, 100, 50, 20, 10, 5, 2, 1]}')
           
+          echo "API响应状态码: $(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:80/api/coins \
+            -H "Content-Type: application/json" \
+            -d '{"totalAmount": 11.00, "denominations": [500, 200, 100, 50, 20, 10, 5, 2, 1]}')"
+          
           if [[ $API_RESPONSE == *"totalAmount"* ]]; then
-            echo "✅ API test passed - Service is working correctly!"
-            echo "API Response: $API_RESPONSE"
+            echo "✅ API测试通过 - 服务功能正常!"
+            echo "API响应: $API_RESPONSE"
           else
-            echo "❌ API test failed"
-            echo "Response: $API_RESPONSE"
+            echo "❌ API测试失败"
+            echo "响应内容: $API_RESPONSE"
+            echo "容器最新日志:"
+            docker logs --tail 50 $CONTAINER_NAME
             exit 1
           fi
           
-          # 显示容器状态
-          echo "Container status:"
+          # 显示最终状态
+          echo "📊 最终部署状态:"
+          echo "容器状态:"
           docker ps --filter name=$CONTAINER_NAME
+          echo "端口监听状态:"
+          netstat -tlpn | grep -E ':(80|8081) ' || echo "端口监听检查失败"
           
           # 清理未使用的Docker镜像
+          echo "🧹 清理未使用的Docker资源..."
           docker system prune -f
           
-          echo "🎉 Deployment completed successfully!"
+          echo "🎉 部署成功完成! 服务地址:"
+          echo "  - API: http://$(curl -s ifconfig.me)/api/coins"
+          echo "  - 健康检查: http://$(curl -s ifconfig.me):8081/healthcheck"
 
   notify:
     runs-on: ubuntu-latest
